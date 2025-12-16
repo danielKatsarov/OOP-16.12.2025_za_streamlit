@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from abc import ABC, abstractmethod
 
 # ================== PAGE CONFIG ==================
@@ -29,6 +30,20 @@ city_info = {
     "Париж": {"hotel": ("Paris Boutique", 130), "food": ("Френска кухня", 40), "sight": "Айфеловата кула"},
     "Русе": {"hotel": ("Hotel Riga", 55), "food": ("Българска кухня", 18), "sight": "Доходното здание"},
     "Букурещ": {"hotel": ("Bucharest Center", 70), "food": ("Румънска кухня", 22), "sight": "Парламентът"}
+}
+
+city_coordinates = {
+    "София": (42.6977, 23.3219),
+    "Белград": (44.7866, 20.4489),
+    "Виена": (48.2082, 16.3738),
+    "Мюнхен": (48.1351, 11.5820),
+    "Скопие": (41.9973, 21.4280),
+    "Тирана": (41.3275, 19.8187),
+    "Рим": (41.9028, 12.4964),
+    "Загреб": (45.8150, 15.9819),
+    "Париж": (48.8566, 2.3522),
+    "Русе": (43.8356, 25.9657),
+    "Букурещ": (44.4268, 26.1025)
 }
 
 DISTANCE_BETWEEN_CITIES = 300
@@ -66,23 +81,17 @@ class Plane(Transport):
     def __init__(self): super().__init__(0.45)
     def name(self): return "✈️ Самолет"
 
-# ================== SIDEBAR (PERSONALIZATION) ==================
+# ================== SIDEBAR ==================
 
 st.sidebar.header("⚙️ Персонализация")
 
 route_choice = st.sidebar.selectbox("Маршрут", list(routes.keys()))
 transport_choice = st.sidebar.selectbox("Транспорт", ["Кола", "Влак", "Автобус", "Самолет"])
-days = st.sidebar.slider("Дни", 1, 14, 5)
+days = st.sidebar.slider("Брой дни", 1, 14, 5)
 people = st.sidebar.slider("Брой пътници", 1, 6, 2)
-
-travel_type = st.sidebar.radio(
-    "Тип пътуване",
-    ["💰 Икономично", "🏨 Стандартно", "💎 Луксозно"]
-)
-
+travel_type = st.sidebar.radio("Тип пътуване", ["💰 Икономично", "🏨 Стандартно", "💎 Луксозно"])
 budget = st.sidebar.number_input("Бюджет (лв)", 300, 15000, 3000)
 
-# Коефициенти според типа
 type_multiplier = {
     "💰 Икономично": 0.85,
     "🏨 Стандартно": 1.0,
@@ -117,9 +126,9 @@ if st.button("🧭 Планирай пътуването"):
         st.subheader("🏙️ Градове")
         for city in cities:
             info = city_info[city]
-            st.markdown(f"**📍 {city}**")
-            st.write(f"🏨 {info['hotel'][0]} ({info['hotel'][1]} лв)")
-            st.write(f"🍽️ {info['food'][0]} ({info['food'][1]} лв)")
+            st.markdown(f"### 📍 {city}")
+            st.write(f"🏨 {info['hotel'][0]} – {info['hotel'][1]} лв")
+            st.write(f"🍽️ {info['food'][0]} – {info['food'][1]} лв")
             st.write(f"🏛️ {info['sight']}")
             st.markdown("---")
 
@@ -142,10 +151,25 @@ if st.button("🧭 Планирай пътуването"):
         st.markdown("---")
         st.metric("💵 Общо", f"{total_cost:.2f} лв")
 
-        progress = min(total_cost / budget, 1.0)
-        st.progress(progress)
+        st.progress(min(total_cost / budget, 1.0))
 
         if total_cost <= budget:
             st.success("✅ Бюджетът е достатъчен!")
         else:
             st.error("❌ Бюджетът не достига.")
+
+    # ================== MAP ==================
+    st.subheader("🗺️ Карта на маршрута")
+
+    map_data = {
+        "lat": [],
+        "lon": []
+    }
+
+    for city in cities:
+        lat, lon = city_coordinates[city]
+        map_data["lat"].append(lat)
+        map_data["lon"].append(lon)
+
+    df_map = pd.DataFrame(map_data)
+    st.map(df_map)
